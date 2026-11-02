@@ -240,7 +240,11 @@ function App() {
         <div className="hero-grid" />
         <div className="hero-copy">
           <div className="hero-kicker"><span className="status-dot"/> INDEPENDENTLY CURIOUS · NAGPUR, INDIA</div>
-          <h1 className="hero-title">I build things.<br/><em>Some work.</em><br/>Some teach me<br/><span>something.</span></h1>
+          <h1 className="hero-title">
+  I build things.<br/>
+  <em>Some work.</em><br/>
+  <span>Some teach me<br/>something.</span>
+</h1>
           <p className="hero-description">A developer, researcher and builder who enjoys turning ideas into working systems — from AI agents to healthcare tech, from data experiments to Formula 1 visualizations.</p>
           <div className="hero-actions"><a href="#work" className="primary-action">Explore Projects <Arrow diagonal /></a><a href="#about" className="secondary-action">About Me <Arrow diagonal /></a></div>
           <div className="hero-bottom"><div className="hero-role">AI ENGINEER <i>·</i> RESEARCHER <i>·</i> BUILDER</div><a href="#work" className="scroll-link">SCROLL TO EXPLORE <Arrow /></a></div>
