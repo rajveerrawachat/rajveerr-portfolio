@@ -170,3 +170,177 @@
    bubble through the complete hero visual so the canvas reacts over the face and jacket too. */
 .hero-visual .universe{pointer-events:none;mask-image:radial-gradient(ellipse at 53% 51%,#000 42%,rgba(0,0,0,.92) 70%,transparent 100%);}
 .hero-visual .universe canvas{pointer-events:none;}
+
+/* Hero headline typography */
+.hero-title > em {
+  color: var(--navy);
+  font-family: 'Cormorant Garamond', serif;
+  font-style: normal;
+  font-weight: 500;
+  letter-spacing: -.045em;
+}
+
+.hero-title > span {
+  color: #6a9fb6;
+  font-family: inherit;
+  font-style: normal;
+  font-weight: inherit;
+  letter-spacing: inherit;
+}
+
+.hero-title > span em {
+  color: inherit;
+  font-family: 'Cormorant Garamond', serif;
+  font-style: normal;
+  font-weight: 500;
+  letter-spacing: -.045em;
+}
+
+
+
+
+
+
+/* PROJECT SHOWCASE — one reserved footprint for both 3D and tile modes. */
+.project-showcase {
+  --cylinder-radius: 500px;
+  --card-width: min(390px, 34%);
+  position: relative;
+  width: min(100%, 1200px);
+  height: 1000px;
+  min-height: 1000px;
+  margin: 0 auto;
+  perspective: 2300px;
+  perspective-origin: 50% 42%;
+  isolation: isolate;
+  overflow: hidden;
+  touch-action: pan-y;
+  cursor: pointer;
+}
+.project-showcase::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  left: 12%; right: 12%; bottom: 34px;
+  height: 115px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(23,42,58,.19) 0%, rgba(23,42,58,.08) 45%, rgba(23,42,58,0) 78%);
+  filter: blur(25px);
+  transform: scaleY(.55);
+  pointer-events: none;
+  transition: opacity .7s ease;
+}
+.project-camera {
+  position: absolute;
+  inset: 0;
+  transform: rotateX(13deg);
+  transform-style: preserve-3d;
+}
+.project-list, .project-track {
+  position: absolute;
+  inset: 0;
+  width: 100%; height: 100%;
+  transform-style: preserve-3d;
+}
+.project-track { transform-origin: 50% 50%; will-change: transform; }
+.coverflow-slot {
+  position: absolute;
+  top: 50%; left: 50%;
+  width: var(--card-width);
+  height: 310px;
+  transform-style: preserve-3d;
+  transform: translate(-50%, -50%) rotateY(var(--card-angle)) translateZ(var(--cylinder-radius));
+  transform-origin: center;
+  backface-visibility: visible;
+  will-change: transform, top, left;
+}
+.coverflow-slot .project-card {
+  position: relative;
+  width: 100%; height: 100%; min-height: 0;
+  overflow: hidden;
+  backface-visibility: hidden;
+  box-shadow: 0 14px 35px rgba(23,42,58,.10);
+  transition: box-shadow .3s ease;
+  cursor: pointer;
+}
+.coverflow-slot .project-card:hover { transform: none; box-shadow: 0 18px 42px rgba(23,42,58,.14); }
+.coverflow-slot::after {
+  content: "RA.  /  SELECTED WORK";
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+  background: #f7f4ed;
+  border: 1px solid rgba(23,42,58,.13);
+  color: #6a9fb6;
+  font: 600 10px 'Space Grotesk', sans-serif;
+  letter-spacing: .18em;
+  backface-visibility: hidden;
+  transform: rotateY(180deg) translateZ(1px);
+  pointer-events: none;
+}
+
+/* Five cards unwrap into a 2-column / 3-row grid inside the exact same 1200 × 1000 stage. */
+.project-showcase.is-grid { cursor: default; }
+.project-showcase.is-grid::before { opacity: .45; }
+.project-showcase.is-grid .project-camera { transform: none; }
+.project-showcase.is-grid .project-list,
+.project-showcase.is-grid .project-track { transform-style: flat; }
+.project-showcase.is-grid .project-track {
+  display: block;
+  transform: none;
+}
+.project-showcase.is-grid .coverflow-slot {
+  top: 22px;
+  left: 0;
+  width: calc(50% - 12px);
+  height: 300px;
+  transform: none;
+  backface-visibility: visible;
+}
+.project-showcase.is-grid .coverflow-slot:nth-child(2n) { left: calc(50% + 12px); }
+.project-showcase.is-grid .coverflow-slot:nth-child(3),
+.project-showcase.is-grid .coverflow-slot:nth-child(4) { top: 342px; }
+.project-showcase.is-grid .coverflow-slot:nth-child(5) { top: 662px; left: 25%; }
+.project-showcase.is-grid .coverflow-slot::after { opacity: 0; }
+.project-showcase.is-grid .project-card {
+  width: 100%; height: 100%; min-height: 0;
+  box-shadow: 0 8px 24px rgba(23,42,58,.045);
+  cursor: auto;
+}
+.project-showcase.is-grid .project-card:hover { transform: translateY(-3px); box-shadow: 0 14px 30px rgba(23,42,58,.09); }
+
+.coverflow-controls, .coverflow-arrow, .coverflow-dots, .coverflow-dot, .showcase-hint { display: none !important; }
+
+@media (max-width: 1050px) and (min-width: 701px) {
+  .project-showcase { --cylinder-radius: 405px; --card-width: 39%; height: 1000px; min-height: 1000px; }
+  .coverflow-slot { height: 290px; }
+}
+@media (max-width: 700px) {
+  .project-showcase, .project-showcase.is-grid {
+    width: 100%; height: auto; min-height: 0; overflow: visible;
+    perspective: none; cursor: default;
+  }
+  .project-showcase::before { display: none; }
+  .project-camera, .project-showcase.is-grid .project-camera { position: relative; inset: auto; transform: none; }
+  .project-list, .project-track, .project-showcase.is-grid .project-list, .project-showcase.is-grid .project-track {
+    position: relative; inset: auto; width: 100%; height: auto; display: grid;
+    grid-template-columns: 1fr; gap: 14px; transform: none !important; perspective: none;
+  }
+  .coverflow-slot, .project-showcase.is-grid .coverflow-slot {
+    position: relative; inset: auto; top: auto; left: auto; width: 100%; height: auto;
+    min-height: 300px; transform: none !important; backface-visibility: visible;
+  }
+  .coverflow-slot::after { display: none; }
+  .coverflow-slot .project-card { min-height: 300px; height: 100%; box-shadow: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .project-showcase, .project-showcase * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+  .project-showcase, .project-showcase.is-grid { height: auto; min-height: 0; overflow: visible; perspective: none; }
+  .project-camera, .project-showcase.is-grid .project-camera { position: relative; inset: auto; transform: none; }
+  .project-list, .project-track, .project-showcase.is-grid .project-list, .project-showcase.is-grid .project-track {
+    position: relative; inset: auto; width: 100%; height: auto; display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; transform: none !important;
+  }
+  .coverflow-slot, .project-showcase.is-grid .coverflow-slot { position: relative; inset: auto; top: auto; left: auto; width: 100%; height: auto; min-height: 300px; transform: none !important; }
+  .coverflow-slot::after { display: none; }
+}

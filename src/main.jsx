@@ -1,8 +1,9 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-gsap.registerPlugin(ScrollTrigger);
+import { Flip } from 'gsap/Flip';
+gsap.registerPlugin(ScrollTrigger, Flip);
 import { projects } from './data/projects';
 import './styles.css';
 
@@ -200,6 +201,133 @@ function ProjectCard({ project, index }) {
     <div className="project-bottom"><span>{project.status}</span><span>RA / WORK</span></div>
   </article>;
 }
+
+function ProjectShowcase() {
+  const [gridMode, setGridMode] = useState(false);
+  const showcaseRef = useRef(null);
+  const trackRef = useRef(null);
+  const rotationTween = useRef(null);
+  const rotationAngle = useRef(0);
+  const pendingFlip = useRef(null);
+  const gridModeRef = useRef(false);
+  const hoveredRef = useRef(false);
+  const transitionRef = useRef(null);
+  const reducedMotion = typeof window !== 'undefined' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const coarsePointer = typeof window !== 'undefined' &&
+    window.matchMedia('(pointer: coarse)').matches;
+
+  useEffect(() => {
+    if (reducedMotion || coarsePointer || !trackRef.current) return undefined;
+    const track = trackRef.current;
+    gsap.set(track, { rotationY: 0, transformStyle: 'preserve-3d' });
+    const tween = gsap.to(track, {
+      rotationY: 360,
+      duration: 19,
+      ease: 'none',
+      repeat: -1,
+      onUpdate: () => { rotationAngle.current = gsap.getProperty(track, 'rotationY'); }
+    });
+    rotationTween.current = tween;
+    return () => {
+      tween.kill();
+      transitionRef.current?.kill();
+      rotationTween.current = null;
+    };
+  }, [reducedMotion, coarsePointer]);
+
+  const pauseRotation = () => rotationTween.current?.pause();
+  const resumeRotation = () => {
+    if (!gridModeRef.current && !hoveredRef.current && !reducedMotion && !coarsePointer) {
+      rotationTween.current?.resume();
+    }
+  };
+
+  const toggleGrid = () => {
+    if (reducedMotion || coarsePointer || !showcaseRef.current) return;
+    const nextMode = !gridModeRef.current;
+    const cards = showcaseRef.current.querySelectorAll('.coverflow-slot');
+    pendingFlip.current = Flip.getState(cards, { props: 'borderRadius,boxShadow', simple: true });
+    if (nextMode) {
+      pauseRotation();
+      rotationAngle.current = gsap.getProperty(trackRef.current, 'rotationY') || rotationAngle.current;
+    }
+    gridModeRef.current = nextMode;
+    setGridMode(nextMode);
+  };
+
+  useLayoutEffect(() => {
+    if (!pendingFlip.current || !trackRef.current) return;
+    const state = pendingFlip.current;
+    pendingFlip.current = null;
+    const track = trackRef.current;
+    if (!gridMode) gsap.set(track, { rotationY: rotationAngle.current });
+    const flip = Flip.from(state, {
+      duration: 1.15,
+      ease: 'power3.inOut',
+      absolute: false,
+      scale: false,
+      nested: true,
+      prune: true
+    });
+    const align = gsap.to(track, {
+      rotationY: gridMode ? 0 : rotationAngle.current,
+      duration: 1.15,
+      ease: 'power3.inOut',
+      // Keep the paused infinite rotation tween alive; overwriting this property
+      // would kill it and make it impossible to resume after returning to the carousel.
+      overwrite: false
+    });
+    transitionRef.current = gsap.timeline({
+      onComplete: () => {
+        if (!gridModeRef.current) resumeRotation();
+      }
+    }).add(flip, 0).add(align, 0);
+    return () => transitionRef.current?.kill();
+  }, [gridMode]);
+
+  const handlePointerEnter = (event) => {
+    if (event.pointerType !== 'mouse') return;
+    hoveredRef.current = true;
+    if (!gridModeRef.current) pauseRotation();
+  };
+  const handlePointerLeave = (event) => {
+    if (event.pointerType !== 'mouse') return;
+    hoveredRef.current = false;
+    if (!gridModeRef.current) resumeRotation();
+  };
+  const handleClick = (event) => {
+    if (event.target.closest('a, button, input, textarea, select')) return;
+    toggleGrid();
+  };
+
+  return <div
+    ref={showcaseRef}
+    className={`project-showcase ${gridMode ? 'is-grid' : 'is-cylinder'}`}
+    onPointerEnter={handlePointerEnter}
+    onPointerLeave={handlePointerLeave}
+    onClick={handleClick}
+    role="group"
+    aria-label="Project showcase. Hover to pause the rotating 3D carousel. Click to unfold projects into a tile grid; click again to return."
+  >
+    <div className="project-camera">
+      <div className="project-list">
+        <div className="project-track" ref={trackRef}>
+          {projects.map((project, index) => (
+            <div
+              className="coverflow-slot"
+              key={project.number}
+              style={{ '--card-angle': `${index * (360 / projects.length)}deg` }}
+            >
+              <ProjectCard project={project} index={index} />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>;
+}
+
 function CustomCursor() {
   const dotRef = useRef(null);
   const ringRef = useRef(null);
@@ -226,7 +354,6 @@ function App() {
         gsap.from('.hero-portrait-stage', { y: 70, opacity: 0, scale: .94, duration: 1.45, ease: 'power4.out', delay: .28 });
         gsap.from('.portrait-index, .portrait-caption', { opacity: 0, y: 16, duration: .8, stagger: .12, delay: .9, ease: 'power2.out' });
         gsap.utils.toArray('.section-label, .about-note, .intro-copy, .work-heading, .toolkit-grid, .closing-main').forEach((element) => gsap.from(element, { y: 42, opacity: 0, duration: .9, ease: 'power3.out', scrollTrigger: { trigger: element, start: 'top 86%', once: true } }));
-        gsap.utils.toArray('.project-card').forEach((element, index) => gsap.from(element, { y: 55, opacity: 0, duration: .8, delay: (index % 2) * .08, ease: 'power3.out', scrollTrigger: { trigger: element, start: 'top 88%', once: true } }));
         gsap.utils.toArray('.skill-group').forEach((element, index) => gsap.from(element, { x: 28, opacity: 0, duration: .7, delay: index * .07, ease: 'power2.out', scrollTrigger: { trigger: element, start: 'top 90%', once: true } }));
       }
     });
@@ -240,7 +367,14 @@ function App() {
         <div className="hero-grid" />
         <div className="hero-copy">
           <div className="hero-kicker"><span className="status-dot"/> INDEPENDENTLY CURIOUS · NAGPUR, INDIA</div>
-          <h1 className="hero-title">I build things.<br/>Some work!<br/><span>Some teach me<br/>something.</span></h1>
+          <h1 className="hero-title">
+  I build things.<br />
+  <em>Some work!</em><br />
+  <span>
+    Some teach me<br />
+    <em>something.</em>
+  </span>
+</h1>
           <p className="hero-description">A developer, researcher and builder who enjoys turning ideas into working systems — from AI agents to healthcare tech, from data experiments to Formula 1 visualizations.</p>
           <div className="hero-actions"><a href="#work" className="primary-action">Explore Projects <Arrow diagonal /></a><a href="#about" className="secondary-action">About Me <Arrow diagonal /></a></div>
           <div className="hero-bottom"><div className="hero-role">AI ENGINEER <i>·</i> RESEARCHER <i>·</i> BUILDER</div><a href="#work" className="scroll-link">SCROLL TO EXPLORE <Arrow /></a></div>
@@ -260,7 +394,7 @@ function App() {
       <section className="work section-shell" id="work">
         <div className="section-label"><span>02</span> / SELECTED WORK <span className="section-count">05 PROJECTS</span></div>
         <div className="work-heading"><h2>Things I've<br/><em>been building.</em></h2><p>A snapshot of projects, experiments and ideas in progress. This is a living list — the details will grow as the work does.</p></div>
-        <div className="project-list">{projects.map((project, i) => <ProjectCard key={project.number} project={project} index={i} />)}</div>
+        <ProjectShowcase />
       </section>
 
       <section className="toolkit section-shell" id="toolkit">
